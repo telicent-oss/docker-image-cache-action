@@ -34,6 +34,7 @@ runs:
       shell: bash
       run: |
         mkdir -p "${{ inputs.temp-path }}"
+        echo "${{ inputs.images }}" > "${{ inputs.temp-path}}/images"
 
     - name: Restore Cache Only
       if: ${{ inputs.restore-only == 'true' }}
@@ -51,8 +52,8 @@ runs:
         key: ${{ steps.cache-key.outputs.key }}
         path: ${{ inputs.temp-path }}
 
-    - name: Pull Images if Missing
-      if: ${{ (inputs.restore-only == 'true' && steps.restore-only.outputs.cache-hit != 'true') || (inputs.restore-only != 'true' && steps.image-cache.outputs.cache-hit != 'true')}}
+    - name: Pull Images if Needed (unless restore-only set)
+      if: ${{ inputs.restore-only != 'true' && steps.image-cache.outputs.cache-hit != 'true' }}
       id: pull-images
       shell: bash
       run: |
@@ -61,4 +62,7 @@ runs:
           echo "Pulling Image ${IMAGE} and Saving to ${{ inputs.temp-path }}/${SANITISED}.tar"
           docker pull "${IMAGE}"" && docker image save "${IMAGE}" --output "${{ inputs.temp-path }}/${SANITISED}.tar"
         done
+
+        rm -f "${{ inputs.temp-path }}/images"
+        ls -lh "${{ inputs.temp-path }}"
 
