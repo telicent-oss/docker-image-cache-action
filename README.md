@@ -210,9 +210,13 @@ jobs:
 Here each invocation of the action has a different `images` input and a different `temp-path` input so will generate
 different [cache keys](#can-i-control-the-cache-key) and have different independent cache entries.
 
-**NB:** If you don't specify a different `temp-path` for each invocation of the action both images will still end up in
-the default `.images` directory together and both cache keys will contain both images, you **MUST** supply different
-`temp-path` inputs to cache images independently.
+There are a couple of gotchas that apply here:
+
+1. If you don't specify a different `temp-path` for each invocation of the action both images will still end up in the
+   default `.images` directory together and both cache keys will contain both images, you **MUST** supply different
+   `temp-path` inputs to cache images independently.
+2. You **MUST** also restore each image independently, and specify a `temp-path` that matches that used to
+   originally cache the images.  This is a side-effect of GitHub Actions [Cache Versioning][6] behaviour.
 
 ### Can I tell whether the images have been made available?
 
@@ -257,3 +261,4 @@ This Action is licensed under the Apache License 2.0, see [LICENSE](LICENSE) and
 [3]: https://github.com/docker/login-action/tree/v3.3.0/
 [4]: https://github.com/aws-actions/amazon-ecr-login
 [5]: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/caching-dependencies-to-speed-up-workflows#about-caching-workflow-dependencies
+[6]: https://github.com/actions/cache/blob/main/README.md#cache-version
