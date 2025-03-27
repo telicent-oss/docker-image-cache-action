@@ -28,7 +28,7 @@ runs:
       id: cache-key
       shell: bash
       run: |
-        echo "key=$(echo "${{ inputs.images }}" | md5)" >> $GITHUB_OUTPUT
+        echo "key=$(echo "${{ inputs.images }}" | openssl md5 | awk '{print $2}')" >> $GITHUB_OUTPUT
 
     - name: Make temporary directory
       shell: bash
