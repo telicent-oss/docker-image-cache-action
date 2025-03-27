@@ -17,7 +17,7 @@ inputs:
       Specifies whether the cache should only be restored
   temp-path:
     required: false
-    default: ".images/"
+    default: ".images"
     description: |
       Specifies a temporary directory used for storing the Docker Image Tarballs
 runs:
@@ -35,6 +35,7 @@ runs:
       run: |
         mkdir -p "${{ inputs.temp-path }}"
         echo "${{ inputs.images }}" > "${{ inputs.temp-path}}/images"
+        cat "${{ inputs.temp-path}}/images"
 
     - name: Restore Cache Only
       if: ${{ inputs.restore-only == 'true' }}
