@@ -100,6 +100,7 @@ jobs:
         id: restore
         uses: rvesse/docker-image-cache-action@v1
         with:
+          temp-path: .images/kafka
           images: |
             confluentinc/cp-kafka:7.7.1
           restore-only: true
@@ -121,6 +122,7 @@ jobs:
         id: restore
         uses: rvesse/docker-image-cache-action@v1
         with:
+          temp-path: .images/postgres
           images: |
             postgres:15-alpine
           restore-only: true
@@ -146,7 +148,7 @@ jobs:
           restore-only: true
 
       - name: Verify Caching Latest fails
-        if: ${{ steps.fail.outcome != 'failed' }}
+        if: ${{ failure() && steps.fail.outcome != 'failed' }}
         run: |
           echo "Expected attempting to cache latest to fail"
           exit 1
