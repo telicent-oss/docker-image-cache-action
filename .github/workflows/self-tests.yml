@@ -20,7 +20,7 @@ jobs:
 
       - name: Pull and Cache Images
         id: pull-and-cache
-        uses: rvesse/docker-image-cache-action@v1
+        uses: telicent-oss/docker-image-cache-action@v1
         with:
           images: |
             confluentinc/cp-kafka:7.7.1
@@ -42,7 +42,7 @@ jobs:
     steps:
       - name: Restore Cached Images
         id: restore
-        uses: rvesse/docker-image-cache-action@v1
+        uses: telicent-oss/docker-image-cache-action@v1
         with:
           images: |
             confluentinc/cp-kafka:7.7.1
@@ -65,7 +65,7 @@ jobs:
     steps:
       - name: Restore Cached Images
         id: restore
-        uses: rvesse/docker-image-cache-action@v1
+        uses: telicent-oss/docker-image-cache-action@v1
         with:
           images: |
             confluentinc/cp-kafka:7.7.1  
@@ -95,7 +95,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Cache Confluent Kafka
-        uses: rvesse/docker-image-cache-action@v1
+        uses: telicent-oss/docker-image-cache-action@v1
         with:
           restore-only: false
           temp-path: .images/kafka
@@ -103,7 +103,7 @@ jobs:
             confluentinc/cp-kafka:7.7.1
 
       - name: Cache Postgres
-        uses: rvesse/docker-image-cache-action@v1
+        uses: telicent-oss/docker-image-cache-action@v1
         with:
           restore-only: false
           temp-path: .images/postgres
@@ -126,7 +126,7 @@ jobs:
     steps:
       - name: Restore Cached Images
         id: restore
-        uses: rvesse/docker-image-cache-action@v1
+        uses: telicent-oss/docker-image-cache-action@v1
         with:
           temp-path: .images/kafka
           images: |
@@ -149,7 +149,7 @@ jobs:
     steps:
       - name: Restore Cached Images
         id: restore
-        uses: rvesse/docker-image-cache-action@v1
+        uses: telicent-oss/docker-image-cache-action@v1
         with:
           temp-path: .images/postgres
           images: |
@@ -170,7 +170,7 @@ jobs:
     steps:
       - name: Fail to Cache Latest
         id: fail
-        uses: rvesse/docker-image-cache-action@v1
+        uses: telicent-oss/docker-image-cache-action@v1
         continue-on-error: true
         with:
           images: |
@@ -189,7 +189,7 @@ jobs:
     steps:
       - name: Fail to Cache Nothing
         id: fail
-        uses: rvesse/docker-image-cache-action@v1
+        uses: telicent-oss/docker-image-cache-action@v1
         continue-on-error: true
         with:
           images: "  "
