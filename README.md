@@ -37,15 +37,15 @@ jobs:
       # Some more build steps that use the Docker images
 ```
 
-In the above example we are caching two images, and we set `restore-only` based on whether this is not the `main`
-branch.  So for `main` we would pull the images if they aren't yet cached and upload them to the Actions cache, for any
-other branch we will only restore the cache and load the images from there.  In the event that the cache was missing the
-images won't be present so your job would still need to pull the images in some other job step.
+In the above example we are caching two images - `confluentinc/cp-kafka:7.7.1` and `postgres:15-alpine`.  Notice that we
+set `restore-only` based on whether this is not the `main` branch.  So for `main` we would pull the images if they
+aren't yet cached and upload them to the Actions cache, for any other branch we will only restore the cache and load the
+images from there.  In the event that the cache was missing the images won't be present so your job would still need to
+pull the images in some other job step.
 
-This works because of how GitHub Actions
-[matches caches][2], if the cache key is not present for a specific branch it falls back to using the cache entry from
-the base branch, and ultimately falls back to your default branch (here we've assumed this is `main` as most modern
-repositories use).  
+This works because of how GitHub Actions [matches caches][2], if the cache key is not present for a specific branch it
+falls back to using the cache entry from the base branch, and ultimately falls back to your default branch (here we've
+assumed this is `main` as most modern repositories use).  
 
 If you have multiple workflows that want to share the cache see [Priming the Cache](#priming-the-cache) for approaches
 to that.

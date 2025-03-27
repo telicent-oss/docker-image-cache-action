@@ -45,7 +45,7 @@ runs:
     - name: Check at least one image reference was provided
       shell: bash
       run: |
-        IMAGES=$(echo -n "${{ inputs.images }}" | tr -d ' ')
+        IMAGES=$(echo -n "${{ inputs.images }}" | tr -d '[:space:]')
         if [ -z "${IMAGES}" ]; then
           echo "::error title=${{ github.job }} - No Images to Cache::One/more image references MUST be supplied"
           exit 1
@@ -55,7 +55,7 @@ runs:
       id: cache-key
       shell: bash
       run: |
-        echo "key=docker-images-$(echo "${{ inputs.images }}" | openssl md5 | awk '{print $2}')" >> $GITHUB_OUTPUT
+        echo "key=docker-images-$(echo "${{ inputs.images }}" | tr -d '[:space:]' | openssl md5 | awk '{print $2}')" >> $GITHUB_OUTPUT
 
     - name: Make temporary directory
       shell: bash
@@ -88,7 +88,15 @@ runs:
           if [ -z "${IMAGE}" ]; then
             continue
           fi
-          SANITISED=$(echo "${IMAGE}" | sed 's/[:/<>|*?\]/-/g' | tr -s '-')
+
+          # Sanitise the image reference into a safe filename by replacing special characters with hyphens, squashing 
+          # any adjacent hyphens together and removing any white space
+          SANITISED=$(echo "${IMAGE}" | sed 's/[:/<>|*?\ ]/-/g' | tr -d '[:space:]')
+
+          # Also remember to trim any whitespace from image reference
+          IMAGE=$(echo "${IMAGE}" | tr -d '[:space:]')
+
+          # Actually pull and save the image to our target cache directory
           echo "Pulling Image ${IMAGE} and Saving to ${{ inputs.temp-path }}/${SANITISED}.tar"
           docker pull "${IMAGE}" && docker image save "${IMAGE}" --output "${{ inputs.temp-path }}/${SANITISED}.tar"
         done
