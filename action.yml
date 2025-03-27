@@ -73,6 +73,8 @@ runs:
       if: ${{ inputs.restore-only == 'true' || steps.pull-images.outcome == 'skipped' }}
       shell: bash
       run: |
+        ls -lh "${{ inputs.temp-path }}"
+
         for IMAGE in $(ls "${{ inputs.temp-path }}/*.tar"); do
           echo "Loading Docker image from Tarball ${IMAGE}"
           docker image load --input "${{inputs.temp-path}}/${IMAGE}"
