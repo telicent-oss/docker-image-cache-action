@@ -28,7 +28,13 @@ outputs:
 runs:
   using: "composite"
   steps:
-    # Generate Cache Key
+    - name: Fail if attempting to cache Latest
+      if: ${{ contains(inputs.images, ':latest')}}
+      shell: bash
+      run: |
+        echo "::error title=${{ github.job }} - Can't Cache Latest::One/more images is a reference to a \`:latest\` tag which cannot be cached"
+        exit 1
+
     - name: Generate Cache Key
       id: cache-key
       shell: bash

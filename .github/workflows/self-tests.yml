@@ -71,6 +71,7 @@ jobs:
         uses: rvesse/docker-image-cache-action@v1
         with:
           restore-only: false
+          temp-path: .images/kafka
           images: |
             confluentinc/cp-kafka:7.7.1
 
@@ -78,6 +79,7 @@ jobs:
         uses: rvesse/docker-image-cache-action@v1
         with:
           restore-only: false
+          temp-path: .images/postgres
           images: |
             postgres:15-alpine
 
@@ -88,3 +90,63 @@ jobs:
       - name: Verify Postgres available
         run: |
           docker image inspect postgres:15-alpine
+
+  restore-independently-cached-kafka:
+    needs:
+      - independent-caching
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore Cached Images
+        id: restore
+        uses: rvesse/docker-image-cache-action@v1
+        with:
+          images: |
+            confluentinc/cp-kafka:7.7.1
+          restore-only: true
+
+      - name: Verify Confluent Kafka available
+        run: |
+          docker image inspect confluentinc/cp-kafka:7.7.1
+
+      - name: Verify Postgres isn't available
+        run: |
+          docker image inspect postgres:15-alpine && exit 1 || exit 0
+
+  restore-independently-cached-postgres:
+    needs:
+      - independent-caching
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore Cached Images
+        id: restore
+        uses: rvesse/docker-image-cache-action@v1
+        with:
+          images: |
+            postgres:15-alpine
+          restore-only: true
+
+      - name: Verify Confluent Kafka isn't available
+        run: |
+          docker image inspect confluentinc/cp-kafka:7.7.1 && exit 1 || exit 0
+
+      - name: Verify Postgres available
+        run: |
+          docker image inspect postgres:15-alpine
+
+  unable-to-cache-latest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail to Cache Latest
+        id: fail
+        uses: rvesse/docker-image-cache-action@v1
+        continue-on-error: true
+        with:
+          images: |
+            postgres:latest
+          restore-only: true
+
+      - name: Verify Caching Latest fails
+        if: ${{ steps.fail.outcome != 'failed' }}
+        run: |
+          echo "Expected attempting to cache latest to fail"
+          exit 1

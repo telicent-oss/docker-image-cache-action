@@ -164,6 +164,10 @@ If cache key collisions are causing you a problem please refer to our [Priming t
 If that doesn't resolve your problem then please open an issue describing your use case in more detail so we can
 reconsider whether future versions of this action provide more control over the cache key.
 
+### Can I cache a `:latest` tag for an image?
+
+**No**, attempting to do so will cause the action to fail.
+
 ### Can I cache images independently?
 
 Yes, to do this you will need to invoke this action multiple times supplying a single image reference to each invocation e.g.
@@ -188,6 +192,7 @@ jobs:
         uses: telicent-oss/docker-image-cache-action@v1
         with:
           restore-only: false
+          temp-path: .images/kafka
           images: |
             confluentinc/cp-kafka:7.7.1
 
@@ -195,14 +200,19 @@ jobs:
         uses: telicent-oss/docker-image-cache-action@v1
         with:
           restore-only: false
+          temp-path: .images/postgres
           images: |
             postgres:15-alpine
 
       # Some more build steps that use the Docker images
 ```
 
-Here each invocation of the action has a different `images` input so will generate different [cache
-keys](#can-i-control-the-cache-key) and have different independent cache entries.
+Here each invocation of the action has a different `images` input and a different `temp-path` input so will generate
+different [cache keys](#can-i-control-the-cache-key) and have different independent cache entries.
+
+**NB:** If you don't specify a different `temp-path` for each invocation of the action both images will still end up in
+the default `.images` directory together and both cache keys will contain both images, you **MUST** supply different
+`temp-path` inputs to cache images independently.
 
 ### Can I tell whether the images have been made available?
 
@@ -224,9 +234,10 @@ pull the image if it isn't available unless you explicitly disabled that behavio
 
 ### How do I cache images from private repositories?
 
-This action just uses `docker pull` to retrieve images, so as long as your workflow has authenticated itself to your private
-repository, whether explicitly via `docker login`, or via a job stp using
-[`docker/login-action`][3]/[`aws-actions/amazon-ecr-login`][4]/etc., then this action can be used to cache images from it.
+This action just uses `docker pull` to retrieve images, so as long as your workflow has authenticated itself to your
+private repository, whether explicitly via `docker login`, or via a job stp using
+[`docker/login-action`][3]/[`aws-actions/amazon-ecr-login`][4]/etc., then this action can be used to cache images from
+it.
 
 Please bear in mind the following from [GitHub Actions documentation][5]:
 
