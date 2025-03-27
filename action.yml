@@ -20,6 +20,11 @@ inputs:
     default: ".images"
     description: |
       Specifies a temporary directory used for storing the Docker Image Tarballs
+outputs:
+  cache-key:
+    value: ${{ steps.cache-key.outputs.key }}
+    description: |
+      The Docker Images cache key generated based upon hashing the provided image references
 runs:
   using: "composite"
   steps:
@@ -28,7 +33,7 @@ runs:
       id: cache-key
       shell: bash
       run: |
-        echo "key=$(echo "${{ inputs.images }}" | openssl md5 | awk '{print $2}')" >> $GITHUB_OUTPUT
+        echo "key=docker-images-$(echo "${{ inputs.images }}" | openssl md5 | awk '{print $2}')" >> $GITHUB_OUTPUT
 
     - name: Make temporary directory
       shell: bash
