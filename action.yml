@@ -35,7 +35,6 @@ runs:
       run: |
         mkdir -p "${{ inputs.temp-path }}"
         echo "${{ inputs.images }}" > "${{ inputs.temp-path}}/images"
-        cat "${{ inputs.temp-path}}/images"
 
     - name: Restore Cache Only
       if: ${{ inputs.restore-only == 'true' }}
@@ -59,9 +58,12 @@ runs:
       shell: bash
       run: |
         for IMAGE in $(cat "${{ inputs.temp-path }}/images"); do
+          if [ -z "${IMAGE}" ]; then
+            continue
+          fi
           SANITISED=$(echo "${IMAGE}" | sed 's/[:/<>|*?\]/-/g' | tr -s '-')
           echo "Pulling Image ${IMAGE} and Saving to ${{ inputs.temp-path }}/${SANITISED}.tar"
-          docker pull "${IMAGE}"" && docker image save "${IMAGE}" --output "${{ inputs.temp-path }}/${SANITISED}.tar"
+          docker pull "${IMAGE}" && docker image save "${IMAGE}" --output "${{ inputs.temp-path }}/${SANITISED}.tar"
         done
 
         rm -f "${{ inputs.temp-path }}/images"
