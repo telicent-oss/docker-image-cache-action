@@ -1,0 +1,64 @@
+name: Docker Image Cache Action
+description: |
+  This action pulls and caches container images
+author: Telicent
+branding:
+  icon: 'download-cloud'
+  color: 'purple'
+inputs:
+  images:
+    required: true
+    description: |
+      Specifies one/more image references that should be pulled and cached
+  restore-only:
+    required: false
+    default: "false"
+    description: |
+      Specifies whether the cache should only be restored
+  temp-path:
+    required: false
+    default: ".images/"
+    description: |
+      Specifies a temporary directory used for storing the Docker Image Tarballs
+runs:
+  using: "composite"
+  steps:
+    # Generate Cache Key
+    - name: Generate Cache Key
+      id: cache-key
+      shell: bash
+      run: |
+        echo "key=$(echo "${{ inputs.images }}" | md5)" >> $GITHUB_OUTPUT
+
+    - name: Make temporary directory
+      shell: bash
+      run: |
+        mkdir -p "${{ inputs.temp-path }}"
+
+    - name: Restore Cache Only
+      if: ${{ inputs.restore-only == 'true' }}
+      id: restore-only
+      uses: actions/cache/restore@v4
+      with:
+        key: ${{ steps.cache-key.outputs.key }}
+        path: ${{ inputs.temp-path }}
+
+    - name: Image Cache
+      if: ${{ inputs.restore-only != 'true' }}
+      id: image-cache
+      uses: actions/cache@v4
+      with: 
+        key: ${{ steps.cache-key.outputs.key }}
+        path: ${{ inputs.temp-path }}
+
+    - name: Pull Images if Missing
+      if: ${{ (inputs.restore-only == 'true' && steps.restore-only.outputs.cache-hit != 'true') || (inputs.restore-only != 'true' && steps.image-cache.outputs.cache-hit != 'true')}}
+      id: pull-images
+      shell: bash
+      run: |
+        for IMAGE in $(cat "${{ inputs.temp-path }}/images"); do
+          SANITISED=$(echo "${IMAGE}" | sed 's/[:/<>|*?\]/-/g' | tr -s '-')
+          echo "Pulling Image ${IMAGE} and Saving to ${{ inputs.temp-path }}/${SANITISED}.tar"
+          docker pull "${IMAGE}"" && docker image save "${IMAGE}" --output "${{ inputs.temp-path }}/${SANITISED}.tar"
+        done
+
