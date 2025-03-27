@@ -169,3 +169,9 @@ jobs:
         run: |
           echo "Expected attempting to cache nothing to fail"
           exit 1
+
+      - name: Fail if no failure detected
+        if: ${{ !failure() }}
+        run: |
+          echo "Expected attempting to cache nothing to fail"
+          exit 1
