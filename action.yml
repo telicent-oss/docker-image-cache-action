@@ -66,16 +66,18 @@ runs:
           docker pull "${IMAGE}" && docker image save "${IMAGE}" --output "${{ inputs.temp-path }}/${SANITISED}.tar"
         done
 
-        rm -f "${{ inputs.temp-path }}/images"
+        # List Image Tarballs for debugging
         ls -lh "${{ inputs.temp-path }}"
 
     - name: Load Docker Images if Needed
       if: ${{ inputs.restore-only == 'true' || steps.pull-images.outcome == 'skipped' }}
       shell: bash
       run: |
-        ls -lh "${{ inputs.temp-path }}"
-
-        for IMAGE in $(ls "${{ inputs.temp-path }}/*.tar"); do
+        for IMAGE in $(ls "${{ inputs.temp-path }}"); do
+          FILE_EXT=${IMAGE##*.}
+          if [ "${FILE_EXT}" != "tar" ]; then
+            continue
+          fi
           echo "Loading Docker image from Tarball ${IMAGE}"
           docker image load --input "${{inputs.temp-path}}/${IMAGE}"
         done
