@@ -68,14 +68,14 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Cache Confluent Kafka
-        uses: telicent-oss/docker-image-cache-action@v1
+        uses: rvesse/docker-image-cache-action@v1
         with:
           restore-only: false
           images: |
             confluentinc/cp-kafka:7.7.1
 
       - name: Cache Postgres
-        uses: telicent-oss/docker-image-cache-action@v1
+        uses: rvesse/docker-image-cache-action@v1
         with:
           restore-only: false
           images: |
