@@ -152,3 +152,20 @@ jobs:
         run: |
           echo "Expected attempting to cache latest to fail"
           exit 1
+
+  fails-on-empty-image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail to Cache Nothing
+        id: fail
+        uses: rvesse/docker-image-cache-action@v1
+        continue-on-error: true
+        with:
+          images: "  "
+          restore-only: true
+
+      - name: Verify Caching Nothing fails
+        if: ${{ failure() && steps.fail.outcome != 'failed' }}
+        run: |
+          echo "Expected attempting to cache nothing to fail"
+          exit 1

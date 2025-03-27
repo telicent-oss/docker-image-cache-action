@@ -54,12 +54,12 @@ to that.
 
 | Input | Required? | Default | Purpose |
 |-------|-----------|---------|---------|
-| `images` | Yes | N/A | Specifies one/more image references that you want to pull and cache from Docker Hub |
+| `images` | Yes | N/A | Specifies one/more image references that you want to pull and cache from Docker Hub.  This should be a newline separated string as seen in the example usages. |
 | `restore-only` | No | `false` | When set to `true` will only restore images from the cache and not attempt to update the cache, this can mean that images are pulled from Docker Hub if they aren't yet cached. |
-| `temp-path` | No | `.images` | Path for a temporary directly which is used for the cached image tarballs. |
+| `temp-path` | No | `.images` | Path for a temporary directory which is used for the cached image tarballs.  Generally only needs changing if the default conflicts with other content in your build, or you wish to [Cache Images Independently](#can-i-cache-images-independently). |
 
-Note that there is no input for controlling the cache key, the cache key is based upon hashing the `images` input.  If
-you have multiple jobs that all want to use the cached images it is generally best to [Prime the
+Note that there is **intentionally** no input for controlling the cache key, the cache key is based upon hashing the
+`images` input.  If you have multiple jobs that all want to use the cached images it is generally best to [Prime the
 Cache](#priming-the-cache) as shown later in the README.
 
 # Outputs
@@ -67,6 +67,9 @@ Cache](#priming-the-cache) as shown later in the README.
 | Output | Description |
 |--------|-------------|
 | `cache-key` | The generated cached key associated with these image references. |
+| `cache-path` | The path associated with the cache, this is the value of the `temp-path` input. |
+
+These two outputs can be used if you want to have other steps/jobs in your workflow access the created cache directly.
 
 # Priming the Cache
 
@@ -239,11 +242,10 @@ pull the image if it isn't available unless you explicitly disabled that behavio
 ### How do I cache images from private repositories?
 
 This action just uses `docker pull` to retrieve images, so as long as your workflow has authenticated itself to your
-private repository, whether explicitly via `docker login`, or via a job stp using
-[`docker/login-action`][3]/[`aws-actions/amazon-ecr-login`][4]/etc., then this action can be used to cache images from
-it.
+private repository, whether explicitly via `docker login`, or via a job step using [`docker/login-action`][3], 
+[`aws-actions/amazon-ecr-login`][4], or similar, then this action can be used to cache images from it.
 
-Please bear in mind the following from [GitHub Actions documentation][5]:
+Please bear in mind the following from [GitHub Actions documentation][5] when deciding whether to cache private images:
 
 > We recommend that you don't store any sensitive information in the cache.
 >
