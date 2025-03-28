@@ -1,7 +1,7 @@
 # Docker Image Cache Action
 
 This repository provides a GitHub Action that handles the pulling and caching of Docker images so that you are not
-constantly pulling images from public repositories like Docker Hub/GHCR etc and potentially hitting rate limits.
+constantly pulling images from public repositories like Docker Hub/GHCR etc. and potentially hitting rate limits.
 
 This also speeds up builds as you don't have to pull the images from public repositories each time but can merely
 restore them from GitHub Actions cache instead which is generally much faster.
@@ -60,7 +60,7 @@ to that.
 
 Note that there is **intentionally** no input for controlling the cache key, the cache key is based upon hashing the
 `images` input.  If you have multiple jobs that all want to use the cached images it is generally best to [Prime the
-Cache](#priming-the-cache) as shown later in the README.
+Cache](#priming-the-cache) as described later.
 
 # Outputs
 
@@ -216,7 +216,7 @@ different [cache keys](#can-i-control-the-cache-key) and have different independ
 There are a couple of gotchas that apply here:
 
 1. If you don't specify a different `temp-path` for each invocation of the action both images will still end up in the
-   default `.images` directory together and both cache keys will contain both images, you **MUST** supply different
+   default `.images` directory together and both cache entries will contain both images, you **MUST** supply different
    `temp-path` inputs to cache images independently.
 2. You **MUST** also restore each image independently, and specify a `temp-path` that matches that used to
    originally cache the images.  This is a side-effect of GitHub Actions [Cache Versioning][6] behaviour.
