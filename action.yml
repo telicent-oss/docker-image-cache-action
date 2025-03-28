@@ -35,13 +35,15 @@ outputs:
 runs:
   using: "composite"
   steps:
+    # Ensure that the inputs are valid
+    # - No :latest tagged images are in the references
+    # - Image references isn't blank i.e. all whitespace
     - name: Fail if attempting to cache Latest
       if: ${{ contains(inputs.images, ':latest')}}
       shell: bash
       run: |
         echo "::error title=${{ github.job }} - Can't Cache Latest::One/more images is a reference to a ':latest' tag which cannot be cached"
         exit 1
-
     - name: Check at least one image reference was provided
       shell: bash
       run: |
@@ -51,18 +53,22 @@ runs:
           exit 1
         fi
 
+    # Generate a Cache Key for the Images by removing whitespace from the references and hashing them with md5
     - name: Generate Cache Key
       id: cache-key
       shell: bash
       run: |
         echo "key=docker-images-$(echo "${{ inputs.images }}" | tr -d '[:space:]' | openssl md5 | awk '{print $2}')" >> $GITHUB_OUTPUT
 
+    # Prepare the temporary directory where Image Tarballs will be stored
     - name: Make temporary directory
       shell: bash
       run: |
         mkdir -p "${{ inputs.temp-path }}"
         echo "${{ inputs.images }}" > "${{ inputs.temp-path}}/images"
 
+    # If restore-only is set to true use actions/cache/restore so that we only restore the existing
+    # cache if it exists
     - name: Restore Cache Only
       if: ${{ inputs.restore-only == 'true' }}
       id: restore-only
@@ -71,6 +77,8 @@ runs:
         key: ${{ steps.cache-key.outputs.key }}
         path: ${{ inputs.temp-path }}
 
+    # Otherwise use normal actions/cache so we'll restore the existing cache if it exists, and 
+    # potentially update the cache if it doesn't yet exist
     - name: Image Cache
       if: ${{ inputs.restore-only != 'true' }}
       id: image-cache
@@ -79,6 +87,8 @@ runs:
         key: ${{ steps.cache-key.outputs.key }}
         path: ${{ inputs.temp-path }}
 
+    # If restore-only not set and we didn't restore a cache then actually pull the images
+    # Each image is pulled and then saved to a Tarball in our temporary directory
     - name: Pull Images if Needed (unless restore-only set)
       if: ${{ inputs.restore-only != 'true' && steps.image-cache.outputs.cache-hit != 'true' }}
       id: pull-images
@@ -91,7 +101,7 @@ runs:
 
           # Sanitise the image reference into a safe filename by replacing special characters with hyphens, squashing 
           # any adjacent hyphens together and removing any white space
-          SANITISED=$(echo "${IMAGE}" | sed 's/[:/<>|*?\ ]/-/g' | tr -d '[:space:]')
+          SANITISED=$(echo "${IMAGE}" | sed 's/[:/<>|*?\ ]/-/g' | tr -s '-' | tr -d '[:space:]')
 
           # Also remember to trim any whitespace from image reference
           IMAGE=$(echo "${IMAGE}" | tr -d '[:space:]')
@@ -101,9 +111,16 @@ runs:
           docker pull "${IMAGE}" && docker image save "${IMAGE}" --output "${{ inputs.temp-path }}/${SANITISED}.tar"
         done
 
-        # List Image Tarballs for debugging
+    # List Image Tarballs for debugging if Actions Debug Logging is enabled
+    - name: List Restored Tarballs
+      if: ${{ runner.debug == '1' }}
+      shell: bash
+      run: |
         ls -lh "${{ inputs.temp-path }}"
 
+    # If restore-only set, or we restored from the cache
+    # We detect the latter state based on whether the pull-images step was skipped, because that will
+    # be skipped whenever we had a cache hit, even if restore-only wasn't set
     - name: Load Docker Images if Needed
       if: ${{ inputs.restore-only == 'true' || steps.pull-images.outcome == 'skipped' }}
       shell: bash
