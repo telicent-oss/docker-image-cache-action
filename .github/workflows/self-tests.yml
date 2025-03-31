@@ -1,0 +1,202 @@
+name: Action Self-Tests
+on:
+  push:
+    branches:
+      - "**"
+    tags:
+      - "**"
+  workflow_dispatch:
+
+jobs:
+  # Pulls and Caches multiple images in a single action
+  pull-and-cache-images:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3.3.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Pull and Cache Images
+        id: pull-and-cache
+        uses: telicent-oss/docker-image-cache-action@v1
+        with:
+          images: |
+            confluentinc/cp-kafka:7.7.1
+            postgres:15-alpine
+
+      - name: Verify Confluent Kafka available
+        run: |
+          docker image inspect confluentinc/cp-kafka:7.7.1
+
+      - name: Verify Postgres available
+        run: |
+          docker image inspect postgres:15-alpine
+
+  # Verifies that we can restore cached images where the cache was created by a previous job
+  restore-cached-images:
+    needs:
+      - pull-and-cache-images
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore Cached Images
+        id: restore
+        uses: telicent-oss/docker-image-cache-action@v1
+        with:
+          images: |
+            confluentinc/cp-kafka:7.7.1
+            postgres:15-alpine
+          restore-only: true
+
+      - name: Verify Confluent Kafka available
+        run: |
+          docker image inspect confluentinc/cp-kafka:7.7.1
+
+      - name: Verify Postgres available
+        run: |
+          docker image inspect postgres:15-alpine
+
+  # Verify that excess whitespace in the images input is ignored for the purposes of generating cache keys etc.
+  restore-excess-whitespace:
+    needs:
+      - pull-and-cache-images
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore Cached Images
+        id: restore
+        uses: telicent-oss/docker-image-cache-action@v1
+        with:
+          images: |
+            confluentinc/cp-kafka:7.7.1  
+                
+              postgres:15-alpine  
+          restore-only: true
+
+      - name: Verify Confluent Kafka available
+        run: |
+          docker image inspect confluentinc/cp-kafka:7.7.1
+
+      - name: Verify Postgres available
+        run: |
+          docker image inspect postgres:15-alpine
+
+  # Verifies we can pull and cache images independently of each other by invoking the action multiple times
+  independent-caching:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3.3.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Cache Confluent Kafka
+        uses: telicent-oss/docker-image-cache-action@v1
+        with:
+          restore-only: false
+          temp-path: .images/kafka
+          images: |
+            confluentinc/cp-kafka:7.7.1
+
+      - name: Cache Postgres
+        uses: telicent-oss/docker-image-cache-action@v1
+        with:
+          restore-only: false
+          temp-path: .images/postgres
+          images: |
+            postgres:15-alpine
+
+      - name: Verify Confluent Kafka available
+        run: |
+          docker image inspect confluentinc/cp-kafka:7.7.1
+  
+      - name: Verify Postgres available
+        run: |
+          docker image inspect postgres:15-alpine
+
+  # Verifies we can restore just the Kafka cache
+  restore-independently-cached-kafka:
+    needs:
+      - independent-caching
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore Cached Images
+        id: restore
+        uses: telicent-oss/docker-image-cache-action@v1
+        with:
+          temp-path: .images/kafka
+          images: |
+            confluentinc/cp-kafka:7.7.1
+          restore-only: true
+
+      - name: Verify Confluent Kafka available
+        run: |
+          docker image inspect confluentinc/cp-kafka:7.7.1
+
+      - name: Verify Postgres isn't available
+        run: |
+          docker image inspect postgres:15-alpine && exit 1 || exit 0
+
+  # Verifies that we can restore just the Postgres cache
+  restore-independently-cached-postgres:
+    needs:
+      - independent-caching
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore Cached Images
+        id: restore
+        uses: telicent-oss/docker-image-cache-action@v1
+        with:
+          temp-path: .images/postgres
+          images: |
+            postgres:15-alpine
+          restore-only: true
+
+      - name: Verify Confluent Kafka isn't available
+        run: |
+          docker image inspect confluentinc/cp-kafka:7.7.1 && exit 1 || exit 0
+
+      - name: Verify Postgres available
+        run: |
+          docker image inspect postgres:15-alpine
+
+  # Verifies that the action refuses to cache :latest images
+  unable-to-cache-latest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail to Cache Latest
+        id: fail
+        uses: telicent-oss/docker-image-cache-action@v1
+        continue-on-error: true
+        with:
+          images: |
+            postgres:latest
+          restore-only: true
+
+      - name: Verify Caching Latest fails
+        if: ${{ failure() && steps.fail.outcome != 'failed' }}
+        run: |
+          echo "Expected attempting to cache latest to fail"
+          exit 1
+
+  # Verifies that the action fails when given empty images to cache
+  fails-on-empty-image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail to Cache Nothing
+        id: fail
+        uses: telicent-oss/docker-image-cache-action@v1
+        continue-on-error: true
+        with:
+          images: "  "
+          restore-only: true
+
+      - name: Verify Caching Nothing fails
+        if: ${{ failure() && steps.fail.outcome != 'failed' }}
+        run: |
+          echo "Expected attempting to cache nothing to fail"
+          exit 1

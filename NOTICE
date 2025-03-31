@@ -1,0 +1,6 @@
+Telicent Docker Image Cache Action
+==================================
+
+A composite GitHub Action for caching container images to speed up builds.
+
+Copyright (C) 2025 Telicent Ltd.
