@@ -72,7 +72,7 @@ runs:
     - name: Restore Cache Only
       if: ${{ inputs.restore-only == 'true' }}
       id: restore-only
-      uses: actions/cache/restore@v5
+      uses: actions/cache/restore@v6
       with:
         key: ${{ steps.cache-key.outputs.key }}
         path: ${{ inputs.temp-path }}
@@ -82,7 +82,7 @@ runs:
     - name: Image Cache
       if: ${{ inputs.restore-only != 'true' }}
       id: image-cache
-      uses: actions/cache@v5
+      uses: actions/cache@v6
       with: 
         key: ${{ steps.cache-key.outputs.key }}
         path: ${{ inputs.temp-path }}
